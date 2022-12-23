@@ -8,3 +8,4 @@ Moreover, I added a compressed version of PowerView, PowerUp, PowerUpSQL, Powerm
 The main purpose of this is to make Sliver c2 framework runs unmanaged powershell that bypasses Applocker and application whitelisting.
 
 
+[![asciicast](https://asciinema.org/a/c1SFmk1UGt6YCpBrr3bik39qU.svg)](https://asciinema.org/a/c1SFmk1UGt6YCpBrr3bik39qU)
